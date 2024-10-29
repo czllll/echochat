@@ -69,9 +69,9 @@ const Page = () => {
     }
 
 
-    const handleOauthClick = () => {
+    const handleOauthClick = (provider) => {
         try {
-            signIn("google", { callbackUrl: '/dashboard' })
+            signIn(provider, { callbackUrl: '/dashboard' })
         } catch (error) {
             router.push("/sign-in");
             toast.error("Something went wrong")
@@ -107,11 +107,12 @@ const Page = () => {
                         </div>
                         <div className="flex flex-col pt-6 space-y-6">
                             <Button className={`bg-white  text-black rounded-3xl hover:bg-black/10 border p-4 h-11 ${buttonFont.className}`}
-                                onClick={handleOauthClick}>
+                                onClick={() => handleOauthClick("google")}>
                                 <Image src="/icons/google.svg" alt="Google Logo" width={20} height={20} />
                                 Continue with Google
                             </Button>
-                            <Button className={`bg-white  text-black rounded-3xl hover:bg-black/10 border p-4 h-11 ${buttonFont.className}`}>
+                            <Button className={`bg-white  text-black rounded-3xl hover:bg-black/10 border p-4 h-11 ${buttonFont.className}`}
+                                onClick={() => handleOauthClick("github")}>
                                 <Image src="/icons/github.svg" alt="Github Logo" width={20} height={20} />
                                 Continue with Github
                             </Button>

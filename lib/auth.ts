@@ -1,6 +1,7 @@
 import axios from "axios";
 import { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google"
+import GithubProvider from "next-auth/providers/github"
 
 
 export const authConfig: NextAuthOptions = {
@@ -9,6 +10,10 @@ export const authConfig: NextAuthOptions = {
           clientId: process.env.GOOGLE_CLIENT_ID!,
           clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
         }),
+        GithubProvider({
+          clientId: process.env.GITHUB_CLIENT_ID!,
+          clientSecret: process.env.GITHUB_CLIENT_SECRET!,
+        })
       ],
       pages: {
         signIn: '/sign-in'    
@@ -20,8 +25,8 @@ export const authConfig: NextAuthOptions = {
             const response = await axios.post(`${process.env.NEXTAUTH_URL}/api/users`, {
                 emailAddress: user.email,
                 name: profile.name,
-                oauthProvider: "Google",
-                oauthId: account?.providerAccountId
+                oauthProvider: account?.provider,
+                oauthId: account?.providerAccountId,
             });
             if (response.status !== 200) {
                 return false;
