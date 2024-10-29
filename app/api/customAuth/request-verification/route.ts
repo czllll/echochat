@@ -54,7 +54,7 @@ export async function GET(req: Request) {
             },
         });
         if (verificationCodeCol) {
-            return NextResponse.json(verificationCodeCol.verificationCode)
+            return NextResponse.json(verificationCodeCol)
         } else {
             throw Error;
         }

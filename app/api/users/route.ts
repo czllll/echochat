@@ -8,29 +8,48 @@ export async function POST(req: Request) {
         if (!emailAddress) {
             return NextResponse.json({ error: "Missing emailAddress" }, { status: 400 });
         }
-        
-        let user = await prismadb.user.findUnique({
-            where:{
-                email : emailAddress
-            }
-        });
-
-        if (!user) {
-            // 如果用户不存在，创建新用户
-            user = await prismadb.user.create({
-                data: { 
-                    email : emailAddress,
-                    name : emailAddress,
-                    oauthProvider,
-                    oauthId
-
+        const user = await prismadb.user.create({
+            data: { 
+                email : emailAddress,
+                name : emailAddress,
+                oauthProvider,
+                oauthId
                 },
             });
-        }
-        return NextResponse.json({ message: "User created or already exists" }, { status: 200 });
+        
+        return NextResponse.json(user, { status: 200 });
 
     } catch (error) {
         console.log(error)
-        return new NextResponse("[ERROR]", {status: 500})
+        return new NextResponse("[CREATE_USER_ERROR]", {status: 500})
     }
 }
+
+export async function GET(req: Request) {
+    try {
+      const url = new URL(req.url); 
+      const emailAddress = url.searchParams.get("emailAddress"); 
+      const oauthProvider = url.searchParams.get("oauthProvider");
+      const oauthId = url.searchParams.get("oauthId");
+  
+      if (!emailAddress) {
+        return new NextResponse("[MISSING_EMAIL_ADDRESS]", { status: 400 });
+      }
+  
+      // 查找用户
+      const user = await prismadb.user.findUnique({
+        where: {
+          email: emailAddress,
+        },
+      });
+  
+      if (!user) {
+        return new NextResponse("[USER_NOT_FOUND]", { status: 404 });
+      }
+  
+      return NextResponse.json(user, { status: 200 });
+    } catch (error) {
+      console.error(error);
+      return new NextResponse("[FIND_USER_ERROR]", { status: 500 });
+    }
+  }

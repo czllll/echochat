@@ -5,7 +5,7 @@ import { Jua, Roboto } from "next/font/google";
 import axios from "axios";
 
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import toast from "react-hot-toast";
@@ -43,33 +43,7 @@ const Page = () => {
         } 
     }
 
-    const onClickVerify = async() => {
-        try {
-            // 查询验证码是否存在
-            const { data } = await axios.get(`/api/customAuth/request-verification/?emailAddress=${emailAddress}`);
-            const verificationCode = data;
-            // 验证和用户输入的是否相同
-            if (verificationCode === inputCode) {
-                //创建用户或直接跳转
-                const response = await axios.post('/api/users', {
-                    emailAddress
-                });
-
-                if (response.status !== 200) {
-                    throw new Error("User creation or validation failed.");
-                }
-        
-                router.push("/dashboard");
-            }
-
-
-        } catch (error) {
-            console.log("[VERIFY_CODE_ERROR]", error)
-        }
-    }
-
-
-    const handleOauthClick = (provider) => {
+    const handleOauthClick = (provider: string) => {
         try {
             signIn(provider, { callbackUrl: '/dashboard' })
         } catch (error) {
@@ -79,10 +53,24 @@ const Page = () => {
         }
     }
 
+    const handleSesClick = async (provider: string, code: string, email: string) => {
+        const response = await signIn(provider, {
+            email,
+            code,
+            redirect: false
+          });
+          console.log({ response });
+          if (!response?.error) {
+            router.push('/dashboard');
+            router.refresh();
+          }
+      };
+
+
     return (
         <>
             {
-            step===1 && (
+                step===1 && (
                 <>
                     <div className="flex flex-col">
                     <div className="relative w-full h-[180px]">
@@ -128,6 +116,7 @@ const Page = () => {
                                 value={emailAddress}
                                 onChange={(e) => setEmailAddress(e.target.value)}/>
                         </div>
+                        
                         <Button onClick={onClick} className={`bg-violet-400  text-white hover:bg-violet-600 rounded-3xl border p-4 w-full h-11 ${buttonFont.className}`}>
                             Go
                         </Button>
@@ -140,7 +129,7 @@ const Page = () => {
         
                     </div>
                 </>
-            )
+                )
             }
             {
                 step===2 && (
@@ -170,10 +159,11 @@ const Page = () => {
                                 <Button className={`bg-transparent  text-black text-md hover:bg-black/5 rounded-3xl shadow-none p-4 w-full h-11 ${buttonFont.className}`}>
                                 Resend Code
                                 </Button>
-                                <Button onClick={onClickVerify} className={`bg-violet-400  text-white text-md hover:bg-violet-600 rounded-3xl border p-4 w-full h-11 ${buttonFont.className}`}>
+                                <Button  className={`bg-violet-400  text-white text-md hover:bg-violet-600 rounded-3xl border p-4 w-full h-11 ${buttonFont.className}`}
+                                    onClick={() => handleSesClick("credentials", inputCode, emailAddress)}>
                                 Verify
                                 </Button>
-                                <Button className={`bg-transparent text-black text-md hover:bg-black/5 rounded-3xl shadow-none p-4 w-full h-11 ${buttonFont.className}`}>
+                                <Button onClick={() => router.push("/sign-in")} className={`bg-transparent text-black text-md hover:bg-black/5 rounded-3xl shadow-none p-4 w-full h-11 ${buttonFont.className}`}>
                                 Use a different email
                                 </Button>
                             </div>
