@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
     try {
-        const { emailAddress } = await req.json();
+        const { emailAddress, oauthProvider, oauthId } = await req.json();
 
         if (!emailAddress) {
             return NextResponse.json({ error: "Missing emailAddress" }, { status: 400 });
@@ -20,7 +20,10 @@ export async function POST(req: Request) {
             user = await prismadb.user.create({
                 data: { 
                     email : emailAddress,
-                    name : emailAddress
+                    name : emailAddress,
+                    oauthProvider,
+                    oauthId
+
                 },
             });
         }

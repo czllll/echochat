@@ -5,8 +5,10 @@ import { Jua, Roboto } from "next/font/google";
 import axios from "axios";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
+import toast from "react-hot-toast";
 
 const titleFont = Jua({
     weight: "400",
@@ -32,7 +34,7 @@ const Page = () => {
     
     const onClick = async () => {
         try {
-            await axios.post('/api/auth/request-verification', {
+            await axios.post('/api/customAuth/request-verification', {
                 emailAddress
             });
             setStep(2);
@@ -43,9 +45,8 @@ const Page = () => {
 
     const onClickVerify = async() => {
         try {
-            console.log("-====进入点击事件")
             // 查询验证码是否存在
-            const { data } = await axios.get(`/api/auth/request-verification/?emailAddress=${emailAddress}`);
+            const { data } = await axios.get(`/api/customAuth/request-verification/?emailAddress=${emailAddress}`);
             const verificationCode = data;
             // 验证和用户输入的是否相同
             if (verificationCode === inputCode) {
@@ -58,7 +59,7 @@ const Page = () => {
                     throw new Error("User creation or validation failed.");
                 }
         
-                router.push("/");
+                router.push("/dashboard");
             }
 
 
@@ -66,6 +67,18 @@ const Page = () => {
             console.log("[VERIFY_CODE_ERROR]", error)
         }
     }
+
+
+    const handleOauthClick = () => {
+        try {
+            signIn("google", { callbackUrl: '/dashboard' })
+        } catch (error) {
+            router.push("/sign-in");
+            toast.error("Something went wrong")
+            console.log(error)
+        }
+    }
+
     return (
         <>
             {
@@ -93,7 +106,8 @@ const Page = () => {
                             Talk to ChatGPT, GPT-4o, Claude 3 Opus, DALLE 3, and millions of others - all on EchoChat.
                         </div>
                         <div className="flex flex-col pt-6 space-y-6">
-                            <Button className={`bg-white  text-black rounded-3xl hover:bg-black/10 border p-4 h-11 ${buttonFont.className}`}>
+                            <Button className={`bg-white  text-black rounded-3xl hover:bg-black/10 border p-4 h-11 ${buttonFont.className}`}
+                                onClick={handleOauthClick}>
                                 <Image src="/icons/google.svg" alt="Google Logo" width={20} height={20} />
                                 Continue with Google
                             </Button>
