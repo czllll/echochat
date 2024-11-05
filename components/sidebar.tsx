@@ -89,20 +89,24 @@ const Sidebar = () => {
                 </div>
                 
                 <div className="flex flex-row space-x-4  px-6 py-4 border-b">
+                    
                     <Button className="bg-gray-100 w-[120px] h-[80px] text-black  hover:bg-black/10 pt-3">
-                        <div className="space-y-2">
-                            <div className="flex justify-start items-center">
-                                <Search style={{ width: '30px', height: '30px' }} />
-                            </div>
-                            <div className="flex items-center space-x-8">
-                                <div className="text-md font-bold">
-                                    Explore
+                        <Link href="/explore">
+                            <div className="space-y-2">
+                                <div className="flex justify-start items-center">
+                                    <Search style={{ width: '30px', height: '30px' }} />
                                 </div>
-                                <div>
-                                    <ChevronRight className="w-4 h-4"/>
+                                <div className="flex items-center space-x-8">
+                                    <div className="text-md font-bold">
+                                        Explore
+                                    </div>
+                                    <div>
+                                        <ChevronRight className="w-4 h-4"/>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                        </Link>
+
                     </Button>
                     <Button className="bg-gray-100 w-[120px] h-[80px] text-black  hover:bg-black/10 pt-3">
                         <div className="space-y-2">
@@ -124,7 +128,7 @@ const Sidebar = () => {
                 <div>
                     {routes.map((route) => (
                         <Link href={route.href} key={route.href} className="">
-                            <div className="flex flex-row p-4 items-center border-b space-x-4">
+                            <div className="flex flex-row p-4 items-center border-b space-x-4 hover:bg-black/10">
                                 <div className="ml-2">
                                     <route.icon/>
                                 </div>
