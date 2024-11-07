@@ -1,8 +1,13 @@
+"use client"
 import Heading from "@/components/heading";
 import { Input } from "@/components/ui/input";
+import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+
 import { Search } from "lucide-react";
 import Image from 'next/image';
-import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import axios from "axios";
+import { useRouter } from "next/navigation";
 
 const bots = [
     {
@@ -12,7 +17,23 @@ const bots = [
     }
 ]
 
-const allChatPage = async({children}: {children: React.ReactNode;}) => {
+
+const AllChatPage = ({children}: {children: React.ReactNode;}) => {
+    const router = useRouter();
+
+
+    const createChat = async() => {
+        try {
+            const response = await axios.post('/api/chat', {
+                chatTitle: "title11"
+            })
+            const chatId = response.data.id;
+            router.push(`/chat/${chatId}`);
+          } catch (error) {
+            console.log('[CREATE_CHAT_ERROR]', error)
+          }
+    }
+
     return (
         <div>
             <Heading title="Explore"/>
@@ -30,27 +51,33 @@ const allChatPage = async({children}: {children: React.ReactNode;}) => {
                     <div className="spacey-4 border-b py-4 hover:bg-black/10">
                         
                         {bots.map((bot) => (
-                            <Link href={{
-                                pathname: `/bots/${bot.name}`,
-                                query: {
-                                    avatar: bot.avatar,
-                                    botName: bot.name,
-                                }
-                            }}>
-                                <div className="flex flex-row space-x-4 ">
+                            <Dialog key={bot.name}>
+                                <DialogTrigger asChild>
+                                <div className="flex flex-row space-x-4 cursor-pointer">
                                     <div className="relative w-20 h-20">
-                                        <Image fill src={bot.avatar} alt={`${bot.name} avatar`}/>
+                                    <Image fill src={bot.avatar} alt={`${bot.name} avatar`} />
                                     </div>
                                     <div className="flex flex-col space-y-1 w-5/6">
-                                        <div className="font-bold text-lg">
-                                            {bot.name}
-                                        </div>
-                                        <div className="text-ellipsis whitespace-pre-wrap line-clamp-2">
-                                            {bot.description}
-                                        </div>
+                                    <div className="font-bold text-lg">{bot.name}</div>
+                                    <div className="text-ellipsis whitespace-pre-wrap line-clamp-2">{bot.description}</div>
                                     </div>
                                 </div>
-                            </Link>
+                                </DialogTrigger>
+                                <DialogContent>
+                                    <DialogHeader>
+                                        <DialogTitle>{bot.name}</DialogTitle>
+                                            <DialogDescription>
+                                            <div className="relative w-20 h-20 mx-auto">
+                                                <Image fill src={bot.avatar} alt={`${bot.name} avatar`} />
+                                            </div>
+                                            <p className="mt-4">{bot.description}</p>
+                                            </DialogDescription>
+                                    </DialogHeader>
+                                    <Button onClick={createChat}>
+                                        try it
+                                    </Button>
+                                </DialogContent>
+                            </Dialog>
                             ))}
                         
                     </div>
@@ -64,4 +91,4 @@ const allChatPage = async({children}: {children: React.ReactNode;}) => {
         </div>
     )
 }
-export default allChatPage;
+export default AllChatPage;
