@@ -7,6 +7,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 
 
 export const authConfig: NextAuthOptions = {
+  
     providers: [
         GoogleProvider({
           clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -22,10 +23,11 @@ export const authConfig: NextAuthOptions = {
             email: {},
             code: {}
           },
-          async authorize(credentials, req) {
-            const {code, email} = credentials;
+          async authorize(credentials) {
+            const email = credentials?.email || "";
             console.log("credentials",credentials);
             return {
+              id: email,
               email: email,
               name: email,
               oauthProvider: "credentials",
@@ -63,11 +65,11 @@ export const authConfig: NextAuthOptions = {
         });
       },
     
-      async session({ session, token }) {
+      async session({ session }) {
         return session;
       },
     
-      async jwt({ token, user, account }) {
+      async jwt({ token }) {
 
         return token;
       },
@@ -84,43 +86,9 @@ export const authConfig: NextAuthOptions = {
 }
 
 
-const getorCreateUserFromDb = async(email: string,code: string) => {
-  const { data } = await axios.get(`${process.env.NEXTAUTH_URL}/api/customAuth/request-verification/?emailAddress=${email}`);
-
-  const verificationCode = data.verificationCode;
-  const expiresAt = data.expiresAt;
-  const expirationTime = new Date(expiresAt).getTime();
-  const currentTime = new Date().getTime();
-  try {
-    if (verificationCode === code && (expirationTime - currentTime <= 5 * 60 * 1000)) {
-        //查询是否已有该用户
-        const response = await axios.get(`${process.env.NEXTAUTH_URL}/api/users`, {
-          params: {
-            emailAddress: email,
-          },
-        });
-        const user = response.data
-        console.log("user", user);
-        if (!user) {
-          const response = await axios.post(`${process.env.NEXTAUTH_URL}/api/users`, { emailAddress: email });
-          if (response.status !== 200) {
-            throw new Error("User creation or validation failed.");
-          }
-          return response;
-        } else {
-          return user;
-        }
-
-      } else {
-        throw new Error("Verification code is not correct or has been expired!");
-      }
-    }catch (error) {
-      console.error("User creation or validation failed:", error);
-  } 
-}
 
     // 辅助函数
-    async function checkUserExists(email) {
+    async function checkUserExists(email: string) {
       try {
         const response = await axios.get(`${process.env.NEXTAUTH_URL}/api/users`, {
           params: { emailAddress: email },
@@ -133,8 +101,14 @@ const getorCreateUserFromDb = async(email: string,code: string) => {
         throw error; 
       }
     }
+    interface CreateUserParams {
+      email: string;
+      name: string;
+      provider: string;
+      providerId: string;
+    }
     
-    async function createNewUser({ email, name, provider, providerId }) {
+    async function createNewUser({ email, name, provider, providerId }: CreateUserParams) {
       try {
         const response = await axios.post(`${process.env.NEXTAUTH_URL}/api/users`, {
           emailAddress: email,

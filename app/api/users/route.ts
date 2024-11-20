@@ -29,8 +29,8 @@ export async function GET(req: Request) {
     try {
       const url = new URL(req.url); 
       const emailAddress = url.searchParams.get("emailAddress"); 
-      const oauthProvider = url.searchParams.get("oauthProvider");
-      const oauthId = url.searchParams.get("oauthId");
+      // const oauthProvider = url.searchParams.get("oauthProvider");
+      // const oauthId = url.searchParams.get("oauthId");
   
       if (!emailAddress) {
         return new NextResponse("[MISSING_EMAIL_ADDRESS]", { status: 400 });

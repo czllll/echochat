@@ -3,7 +3,7 @@ import prismadb from "@/lib/prismadb";
 import { getServerSession } from "next-auth";
 import { ChatCompletionMessageParam } from "openai/resources/index.mjs";
 
-export async function saveMessages(chatId: string, messages: ChatCompletionMessageParam[]) {
+export async function createMessages(chatId: string, messages: ChatCompletionMessageParam[]) {
     try {
       const session = await getServerSession(authConfig);
       if (!session?.user?.email) return null;
@@ -26,3 +26,15 @@ export async function saveMessages(chatId: string, messages: ChatCompletionMessa
       return null;
     }
   }
+
+
+  export async function checkMessageisExisted(chatId: string): Promise<boolean> {
+    const response = await prismadb.message.findFirst({
+        where: {
+            chatId
+        }
+    });
+    
+    return response !== null;
+}
+

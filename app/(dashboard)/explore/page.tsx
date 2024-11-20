@@ -18,7 +18,7 @@ const bots = [
 ]
 
 
-const AllChatPage = ({children}: {children: React.ReactNode;}) => {
+const AllChatPage = () => {
     const router = useRouter();
 
 

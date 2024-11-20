@@ -3,54 +3,171 @@
 import Sidebar from '@/components/sidebar'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { useState } from 'react'
+import ReactMarkdown from 'react-markdown'
+import rehypeHighlight from 'rehype-highlight'
+import 'highlight.js/styles/github-dark.css' 
+import { useEffect, useRef, useState } from 'react'
 import { ChatCompletionMessageParam } from 'openai/resources/index.mjs'
 import axios from 'axios'
 
 interface Chat {
-    id: string;
-    title: string;
-    messages: any[];
-    // 添加其他需要的属性
+    id: string
+    title: string | null
+    messages?: unknown[]
 }
+
+
 
 export default function ChatClient({ initialChat }: { initialChat: Chat }) {
     const [inputValue, setInputValue] = useState('')
-    const [messages, setMessages] = useState<ChatCompletionMessageParam[]>(initialChat.messages || [])
+    const [messages, setMessages] = useState<ChatCompletionMessageParam[]>([])
+    const [isLoading, setIsLoading] = useState(false)
+    const [streamingContent, setStreamingContent] = useState('')
+    const messagesEndRef = useRef<HTMLDivElement>(null)
+    
+    const scrollToBottom = () => {
+        if (messagesEndRef.current) {
+            messagesEndRef.current.scrollIntoView({ 
+                behavior: "smooth",
+                block: "end" 
+            })
+        }
+    }
+
+    useEffect(() => {
+        scrollToBottom()
+    }, [messages, streamingContent])
 
     async function chatWithBot() {
+        if (!inputValue.trim()) return
+    
         const userMessage: ChatCompletionMessageParam = {
             role: 'user',
             content: inputValue
         }
-        const newMessages = [...messages, userMessage]
-        const response = await axios.post('/api/openai', {
-            messages: newMessages
-        })
-        setMessages(current => [...current, userMessage, response.data])
-        //如果没有对话信息则创建
+        
+        setMessages(prev => [...prev, userMessage])
+        setInputValue('')
+        setIsLoading(true)
+        setStreamingContent('')
+    
         try {
-
+            const response = await fetch('/api/openai', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    messages: [...messages, userMessage]
+                }),
+            })
+    
+            if (!response.ok) {
+                throw new Error('Response error')
+            }
+    
+            let accumulatedContent = ''
+    
+            const reader = response.body?.getReader()
+            if (!reader) {
+                throw new Error('No reader available')
+            }
+    
+            const decoder = new TextDecoder()
+    
+            try {
+                while (true) {
+                    const { done, value } = await reader.read()
+                    if (done) break
+    
+                    const text = decoder.decode(value)
+                    const lines = text.split('\n')
+                    
+                    for (const line of lines) {
+                        if (!line.trim() || !line.startsWith('data: ')) continue
+                        
+                        const data = line.slice(6) // Remove 'data: '
+                        
+                        if (data === '[DONE]') continue
+    
+                        try {
+                            const json = JSON.parse(data)
+                            const content = json.choices[0]?.delta?.content || ''
+                            accumulatedContent += content
+                            setStreamingContent(accumulatedContent)
+                        } catch (error) {
+                            console.error('Error parsing JSON:', error)
+                        }
+                    }
+                }
+            } finally {
+                reader.releaseLock()
+            }
+    
+            const aiMessage: ChatCompletionMessageParam = {
+                role: 'assistant',
+                content: accumulatedContent
+            }
+    
+            setMessages(prev => [...prev, aiMessage])
+            setStreamingContent('')
+    
+            try {
+                await axios.post('/api/messages', {
+                    chatId: initialChat.id,
+                    messages: [...messages, userMessage, aiMessage],
+                })
+            } catch (error) {
+                console.error('[SAVE_MESSAGES_ERROR]', error)
+            }
+    
         } catch (error) {
-
+            console.error('Chat error:', error)
+        } finally {
+            setIsLoading(false)
         }
-        try {
-            await axios.post('/api/messages', {
-              chatId: initialChat.id,
-              messages: newMessages,
-            });
-          } catch (error) {
-            console.error('[SAVE_MESSAGES_ERROR]', error);
-          }
-        setInputValue("")
     }
 
     const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter' && !e.shiftKey && inputValue.trim()) {
-            e.preventDefault();
-            chatWithBot();
+            e.preventDefault()
+            chatWithBot()
         }
-    };
+    }
+
+    const MessageContent = ({ content }: { content: string }) => (
+        <ReactMarkdown 
+            className="prose max-w-none"
+            rehypePlugins={[rehypeHighlight]}
+            components={{
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                code({inline = false, className, children, ...props} :  React.HTMLAttributes<HTMLElement> & { inline?: boolean }) {
+                    if (inline) {
+                        return (
+                            <code className="text-sm px-1 py-0.5 rounded-md bg-gray-800 text-gray-200" {...props}>
+                                {children}
+                            </code>
+                        )
+                    }
+                    const match = /language-(\w+)/.exec(className || '')
+                    return (
+                        <div className="relative">
+                            {match && (
+                                <div className="absolute right-2 top-2 text-xs text-gray-400">
+                                    {match[1]}
+                                </div>
+                            )}
+                            <code className={className} {...props}>
+                                {children}
+                            </code>
+                        </div>
+                    )
+                }
+            }}
+        >
+            {content}
+        </ReactMarkdown>
+    )
 
     return (
         <div>
@@ -60,46 +177,79 @@ export default function ChatClient({ initialChat }: { initialChat: Chat }) {
                 </div>
                 <div className='flex-1 ml-[300px]'>
                     <div className='flex flex-col'>
-                        <div className='flex items-center justify-center bg-gray-100 h-[60px] text-xl font-bold text-gray-700 border-b'>
-                            <div className='relative w-10 h-10'>
-                                {/* <Image fill src={`${avatar}`} alt='avatar' /> */}
+                        <div className='fixed top-0 left-[300px] right-0'>
+                            <div className='flex items-center justify-center bg-gray-100 h-[60px] text-xl font-bold text-gray-700 border-b'>
+                                {initialChat.title}
                             </div>
-                            {initialChat.id}
                         </div>
-                        <div className='flex justify-center text-xl min-h-screen pt-10'>
-                            <div className='flex flex-col w-full px-20 space-y-4'>
-                                {messages.map((message, index) => (
-                                    <div className='flex flex-col' key={index}>
-                                        {message.role !== 'user' && (
-                                            <div className='text-sm text-gray-500 font-semibold'>
-                                                {initialChat.id}
+
+                        <div className="flex justify-center text-xl h-[calc(100vh-180px)] mt-[60px] mb-[80px]">
+                            <div className="w-full h-full">
+                                <div className="h-full px-20 overflow-y-auto">
+                                    <div className="space-y-4 py-4">
+                                        {messages.map((message, index) => (
+                                            <div className="flex flex-col" key={index}>
+                                                {message.role !== "user" && (
+                                                    <div className="text-sm text-gray-500 font-semibold">
+                                                        Assistant
+                                                    </div>
+                                                )}
+                                                <div
+                                                    className={`${
+                                                        message.role === "user"
+                                                            ? "bg-gray-100 self-end px-4 py-2 rounded-md"
+                                                            : "self-start py-2 pr-10 rounded-md"
+                                                    }`}
+                                                >
+                                                    <MessageContent content={String(message.content)} />
+                                                </div>
+                                            </div>
+                                        ))}
+
+                                        {streamingContent && (
+                                            <div className="flex flex-col">
+                                                <div className="text-sm text-gray-500 font-semibold">
+                                                    Assistant
+                                                </div>
+                                                <div className="self-start py-2 pr-10 rounded-md">
+                                                    <MessageContent content={streamingContent} />
+                                                </div>
                                             </div>
                                         )}
-                                        <div
-                                            className={`${
-                                                message.role === 'user'
-                                                    ? 'bg-blue-500 text-white self-end px-4 py-2 rounded-md'
-                                                    : 'bg-gray-200 text-black self-start px-4 py-2 rounded-md'
-                                            }`}
-                                        >
-                                            <div></div>
-                                            {String(message.content)}
-                                        </div>
+
+                                        {isLoading && !streamingContent && (
+                                            <div className="flex items-center justify-start space-x-2">
+                                                <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce" />
+                                                <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce" 
+                                                    style={{ animationDelay: '0.2s' }} />
+                                                <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce" 
+                                                    style={{ animationDelay: '0.4s' }} />
+                                            </div>
+                                        )}
+
+                                        <div ref={messagesEndRef} />
                                     </div>
-                                ))}
+                                </div>
                             </div>
                         </div>
+
                         <div className='fixed ml-[300px] bottom-0 left-0 right-0 border-t p-4'>
-                            <div className='flex gap-2 items-center '>
+                            <div className='flex gap-2 items-center'>
                                 <Input
-                                    placeholder={`talk to ${initialChat.title} or @ a bot`}
+                                    placeholder={`Send a message...`}
                                     className='flex-1 h-12 rounded-full'
                                     value={inputValue}
                                     onChange={e => setInputValue(e.target.value)}
-                                    onKeyDown={handleKeyPress}  
+                                    onKeyDown={handleKeyPress}
+                                    disabled={isLoading}
                                 />
-                                <Button type="submit" className='h-12' onClick={chatWithBot}>
-                                    发送
+                                <Button 
+                                    type="submit" 
+                                    className='h-12' 
+                                    onClick={chatWithBot}
+                                    disabled={isLoading}
+                                >
+                                    Send
                                 </Button>
                             </div>
                         </div>
