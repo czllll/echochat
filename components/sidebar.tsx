@@ -7,10 +7,9 @@ import { Bolt, Bot, BotMessageSquare, CalendarCheck, ChevronRight, Menu, Message
 import { useParams, useRouter } from "next/navigation";
 import type { Chat } from "@prisma/client";
 import useSWR from 'swr';
-import { format } from 'date-fns';
 
 import axios from "axios";
-import { cn } from "@/lib/utils";
+import { cn, formatDateTime } from "@/lib/utils";
 
 const montserrat = Montserrat({
     weight: "600",
@@ -93,10 +92,7 @@ const Sidebar = () => {
         router.push(`/chat/${chatId}`);
     };
 
-    const formatDateTime = (date: Date | string) => {
-        const d = new Date(date);
-        return format(d, 'yyyy-MM-dd HH:mm:ss');
-    };
+
 
     return (
         <div>

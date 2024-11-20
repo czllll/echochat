@@ -9,6 +9,7 @@ import 'highlight.js/styles/github-dark.css'
 import { useEffect, useRef, useState } from 'react'
 import { ChatCompletionMessageParam } from 'openai/resources/index.mjs'
 import axios from 'axios'
+import type { Message } from "@prisma/client";
 
 interface Chat {
     id: string
@@ -29,7 +30,7 @@ export default function ChatClient({ initialChat }: { initialChat: Chat }) {
         const fetchMessages = async () => {
             try {
                 const response = await axios.get(`/api/messages?chatId=${initialChat.id}`)
-                const historicalMessages = response.data.map((msg: any) => ({
+                const historicalMessages = response.data.map((msg: Message) => ({
                     role: msg.role,
                     content: msg.content
                 }))
