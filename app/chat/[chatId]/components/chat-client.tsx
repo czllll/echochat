@@ -25,6 +25,23 @@ export default function ChatClient({ initialChat }: { initialChat: Chat }) {
     const [streamingContent, setStreamingContent] = useState('')
     const messagesEndRef = useRef<HTMLDivElement>(null)
     
+    useEffect(() => {
+        const fetchMessages = async () => {
+            try {
+                const response = await axios.get(`/api/messages?chatId=${initialChat.id}`)
+                const historicalMessages = response.data.map((msg: any) => ({
+                    role: msg.role,
+                    content: msg.content
+                }))
+                setMessages(historicalMessages)
+            } catch (error) {
+                console.error('Failed to fetch messages:', error)
+            }
+        }
+
+        fetchMessages()
+    }, [initialChat.id])
+
     const scrollToBottom = () => {
         if (messagesEndRef.current) {
             messagesEndRef.current.scrollIntoView({ 
