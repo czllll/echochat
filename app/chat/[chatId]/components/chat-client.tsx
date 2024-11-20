@@ -5,11 +5,16 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import ReactMarkdown from 'react-markdown'
 import rehypeHighlight from 'rehype-highlight'
-import 'highlight.js/styles/github-dark.css' 
+import 'highlight.js/styles/vs2015.css'
 import { useEffect, useRef, useState } from 'react'
 import { ChatCompletionMessageParam } from 'openai/resources/index.mjs'
 import axios from 'axios'
 import type { Message } from "@prisma/client";
+import { Pen } from 'lucide-react'
+import toast from 'react-hot-toast'
+import { useRouter } from 'next/navigation'
+import { mutate } from 'swr'
+
 
 interface Chat {
     id: string
@@ -25,7 +30,45 @@ export default function ChatClient({ initialChat }: { initialChat: Chat }) {
     const [isLoading, setIsLoading] = useState(false)
     const [streamingContent, setStreamingContent] = useState('')
     const messagesEndRef = useRef<HTMLDivElement>(null)
-    
+    const router = useRouter()
+    const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(true);
+
+    const [title, setTitle] = useState(initialChat.title)
+
+    const [isEditing, setIsEditing] = useState(false)
+    const [editTitle, setEditTitle] = useState(initialChat.title)
+
+    const handleEditClick = () => {
+        setIsEditing(true)
+        setEditTitle(title)
+    }
+
+    const handleTitleSubmit = async () => {
+        try {
+            await axios.patch(`/api/chat/${initialChat.id}`, {
+                title: editTitle
+            })
+            setTitle(editTitle)
+            setIsEditing(false)
+            toast.success('Title updated successfully')
+            router.refresh()
+            mutate('/api/chat')
+        } catch (error) {
+            console.error('Failed to update title:', error)
+            toast.error('Failed to update title')
+
+        }
+    }
+
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter') {
+            handleTitleSubmit()
+        } else if (e.key === 'Escape') {
+            setIsEditing(false)
+            setEditTitle(title)
+        }
+    }
+
     useEffect(() => {
         const fetchMessages = async () => {
             try {
@@ -63,13 +106,31 @@ export default function ChatClient({ initialChat }: { initialChat: Chat }) {
             role: 'user',
             content: inputValue
         }
-        
+        const isFirstMessage = messages.length === 0;
+
         setMessages(prev => [...prev, userMessage])
         setInputValue('')
         setIsLoading(true)
         setStreamingContent('')
     
         try {
+
+            if (isFirstMessage) {
+                try {
+                    const titleResponse = await axios.post('/api/chat/updateTitle', {
+                        chatId: initialChat.id,
+                        message: inputValue
+                    });
+                    
+                    if (titleResponse.data.title) {
+                        setTitle(titleResponse.data.title);
+                    }
+                    mutate('/api/chat')
+                } catch (error) {
+                    console.error('Failed to update title:', error);
+                }
+            }
+
             const response = await fetch('/api/openai', {
                 method: 'POST',
                 headers: {
@@ -162,7 +223,7 @@ export default function ChatClient({ initialChat }: { initialChat: Chat }) {
                 code({inline = false, className, children, ...props} :  React.HTMLAttributes<HTMLElement> & { inline?: boolean }) {
                     if (inline) {
                         return (
-                            <code className="text-sm px-1 py-0.5 rounded-md bg-gray-800 text-gray-200 max-w-3xl" {...props}>
+                            <code className="text-sm px-1 py-0.5 rounded-md bg-black text-gray-200 max-w-3xl" {...props}>
                                 {children}
                             </code>
                         )
@@ -192,18 +253,52 @@ export default function ChatClient({ initialChat }: { initialChat: Chat }) {
     return (
         <div>
             <div className='flex h-full'>
-                <div className='hidden h-full md:flex md:w-[300px] md:flex-col md:fixed md:inset-y-0 border-r'>
-                    <Sidebar />
-                </div>
-                <div className='flex-1 ml-[300px]'>
+                <Sidebar 
+                    isRightSidebarOpen={isRightSidebarOpen}
+                    onRightSidebarToggle={() => setIsRightSidebarOpen(!isRightSidebarOpen)} 
+                />
+                <div className='flex-1 transition-all duration-300 w-full'>
                     <div className='flex flex-col'>
-                        <div className='fixed top-0 left-[300px] right-0'>
-                            <div className='flex items-center justify-center bg-gray-100 h-[60px] text-xl font-bold text-gray-700 border-b'>
-                                {initialChat.title}
+                    <div className='sticky top-0'>
+                    <div className='flex items-center justify-center bg-gray-100 h-[60px] text-xl font-bold text-black border-b'>
+                        {isEditing ? (
+                            <div className="flex items-center">
+                                <Input
+                                    value={editTitle || ''}
+                                    onChange={(e) => setEditTitle(e.target.value)}
+                                    onKeyDown={handleKeyDown}
+                                    className="
+                                            h-10 w-[200px] text-lg font-medium border-none 
+                                            focus-visible:ring-0 bg-gray-50 placeholder:text-gray-40 shadow-none"
+                                    autoFocus
+                                    
+                                />
+                                <Button 
+                                    variant="ghost" 
+                                    size="icon"
+                                    className="ml-2"
+                                    onClick={handleTitleSubmit}
+                                >
+                                    Save
+                                </Button>
                             </div>
-                        </div>
+                        ) : (
+                            <>
+                                {title}
+                                <Button 
+                                    variant="ghost" 
+                                    size="icon"
+                                    className="ml-4"
+                                    onClick={handleEditClick}
+                                >
+                                    <Pen className="w-4 h-4" />
+                                </Button>
+                            </>
+                        )}
+                    </div>
+                </div>
 
-                        <div className="flex justify-center text-xl h-[calc(100vh-180px)] mt-[60px] mb-[80px]">
+                        <div className="flex justify-center text-xl h-[calc(100vh-120px)] ">
                             <div className="w-full h-full">
                                 <div className="h-full px-20 overflow-y-auto">
                                     <div className="space-y-4 py-4">
@@ -239,10 +334,10 @@ export default function ChatClient({ initialChat }: { initialChat: Chat }) {
 
                                         {isLoading && !streamingContent && (
                                             <div className="flex items-center justify-start space-x-2">
-                                                <div className="w-2 h-2 rounded-full bg-gray-800 animate-bounce" />
-                                                <div className="w-2 h-2 rounded-full bg-gray-800 animate-bounce" 
+                                                <div className="w-2 h-2 rounded-full bg-black animate-bounce" />
+                                                <div className="w-2 h-2 rounded-full bg-black animate-bounce" 
                                                     style={{ animationDelay: '0.2s' }} />
-                                                <div className="w-2 h-2 rounded-full bg-gray-800 animate-bounce" 
+                                                <div className="w-2 h-2 rounded-full bg-black animate-bounce" 
                                                     style={{ animationDelay: '0.4s' }} />
                                             </div>
                                         )}
@@ -253,7 +348,7 @@ export default function ChatClient({ initialChat }: { initialChat: Chat }) {
                             </div>
                         </div>
 
-                        <div className='fixed ml-[300px] bottom-0 left-0 right-0 border-t p-4'>
+                        <div className='sticky bottom-0 left-0 right-0 border-t p-4 bg-white'>
                             <div className='flex gap-2 items-center'>
                                 <Input
                                     placeholder={`Send a message...`}

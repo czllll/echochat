@@ -1,4 +1,3 @@
-// api/openai/route.ts
 import OpenAI from 'openai'
 
 const openai = new OpenAI({
@@ -9,7 +8,6 @@ export async function POST(req: Request) {
     try {
         const { messages } = await req.json()
 
-        // 创建响应流
         const stream = new ReadableStream({
             async start(controller) {
                 const sendData = (data: string) => {

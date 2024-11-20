@@ -3,11 +3,11 @@ import Link from "next/link";
 import Image from "next/image";
 import { Montserrat } from "next/font/google";
 import { Button } from "@/components/ui/button";
-import { Bolt, Bot, BotMessageSquare, CalendarCheck, ChevronRight, Menu, MessagesSquare, Plus, Search, UserRoundPen } from "lucide-react";
+import { Bolt, Bot, BotMessageSquare, CalendarCheck, Menu, MessagesSquare, UserRoundPen } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import type { Chat } from "@prisma/client";
 import useSWR from 'swr';
-
+import { useState } from "react";
 import axios from "axios";
 import { cn, formatDateTime } from "@/lib/utils";
 
@@ -17,7 +17,6 @@ const montserrat = Montserrat({
 });
 
 const fetcher = (url: string) => axios.get(url).then(res => res.data);
-
 
 const GithubIcon = () => (
     <svg
@@ -35,49 +34,36 @@ const routes = [
         label: "All chats",
         icon: MessagesSquare,
         href: "/all-chats",
-        
     },
     {
         label: "Your bots",
         icon: Bot,
         href: "/your-bots",
-        
     },
     {
         label: "Subscribe",
         icon: CalendarCheck,
         href: "/subscribe",
-        
     },
-    // {
-    //     label: "Creators",
-    //     icon: Pickaxe,
-    //     href: "/creators",
-        
-    // },
     {
         label: "Profile",
         icon: UserRoundPen,
         href: "/profile",
-        
     },
     {
         label: "Settings",
         icon: Bolt,
         href: "/settings",
-        
     },
-    // {
-    //     label: "Send feedback",
-    //     icon: Send,
-    //     href: "/send-feedback",
-        
-    // },
-]
+];
 
-const Sidebar = () => {
+interface SidebarProps {
+    isRightSidebarOpen?: boolean;
+    onRightSidebarToggle?: () => void;
+}
 
-
+const Sidebar = ({onRightSidebarToggle }: SidebarProps) => {
+    const [isCollapsed, setIsCollapsed] = useState(false);
     const params = useParams();
     const router = useRouter();
     
@@ -92,13 +78,24 @@ const Sidebar = () => {
         router.push(`/chat/${chatId}`);
     };
 
-
+    const handleMenuClick = () => {
+        setIsCollapsed(!isCollapsed);
+        if (onRightSidebarToggle) {
+            onRightSidebarToggle();
+        }
+    };
 
     return (
-        <div>
+        <div className={cn(
+            "transition-all duration-300 ease-in-out border-r max-h-screen",
+            isCollapsed ? "w-[80px]" : "w-[300px]"
+        )}>
             <div className="flex flex-col h-full min-h-screen">
                 <div className="flex items-center justify-between bg-gray-100 border-b h-[60px]">
-                    <div>
+                    <div className={cn(
+                        "transition-opacity duration-300",
+                        isCollapsed ? "opacity-0 w-0 overflow-hidden" : "opacity-100"
+                    )}>
                         <Link href="/dashboard" className="flex items-center p-3 space-x-2">
                             <div className="relative w-8 h-8">
                                 <Image fill alt="Logo" src="/logo.png"/>
@@ -109,110 +106,119 @@ const Sidebar = () => {
                         </Link>
                     </div>
 
-                    <div className="items-center">
-                        <Button variant="ghost" className="justify-center">
-                            <Menu className=""/>
+                    <div className={cn(
+                        "items-center",
+                        isCollapsed ? "w-full flex justify-center" : ""
+                    )}>
+                        <Button 
+                            variant="ghost" 
+                            className="justify-center"
+                            onClick={handleMenuClick}
+                        >
+                            <Menu className={cn(
+                                "transition-transform duration-300",
+                                isCollapsed ? "rotate-180" : ""
+                            )}/>
                         </Button>
                     </div>
                 </div>
                 
-                <div className="flex flex-row space-x-4  px-6 py-4 border-b">
-                    
-                    <Button className="bg-gray-100 w-[120px] h-[80px] text-black  hover:bg-black/10 pt-3">
+                <div className={cn(
+                    "flex border-b",
+                    isCollapsed ? "flex px-2 py-2" : "space-x-4 px-6 py-4"
+                )}>
+                    <Button className={cn(
+                        "bg-gray-100 text-black hover:bg-black/10 pt-3",
+                        isCollapsed ? "w-[50px] h-[50px] m-1" : "w-full"
+                    )}>
                         <Link href="/explore">
-                            <div className="space-y-2">
+                            <div className="flex items-center">
                                 <div className="flex justify-start items-center">
-                                    <Search style={{ width: '30px', height: '30px' }} />
+                                    <BotMessageSquare style={{ width: '30px', height: '30px' }} />
                                 </div>
-                                <div className="flex items-center space-x-8">
-                                    <div className="text-md font-bold">
-                                        Explore
+                                {!isCollapsed && (
+                                    <div className="flex items-center ml-2">
+                                        <div className="text-md font-bold">
+                                            New chat
+                                        </div>
                                     </div>
-                                    <div>
-                                        <ChevronRight className="w-4 h-4"/>
-                                    </div>
-                                </div>
+                                )}
                             </div>
                         </Link>
-
                     </Button>
-                    <Button className="bg-gray-100 w-[120px] h-[80px] text-black  hover:bg-black/10 pt-3">
-                        <div className="space-y-2">
-                            <div className="flex justify-start items-center">
-                                <BotMessageSquare style={{ width: '30px', height: '30px' }} />
-                            </div>
-                            <div className="flex items-center space-x-4">
-                                <div className="text-md font-bold">
-                                    Create Bot
-                                </div>
-                                <div>
-                                    <Plus className="w-4 h-4"/>
-                                </div>
-                            </div>
+                </div>
+
+                {!isCollapsed && (                
+                    <div className="flex flex-col py-2 border-b">
+                        <div className="px-4 py-2 text-sm font-semibold text-gray-500">
+                            Recent Chats
                         </div>
-                    </Button>
-                </div>
-                <div className="flex flex-col py-2 border-b">
-                    <div className="px-4 py-2 text-sm font-semibold text-gray-500">
-                        Recent Chats
-                    </div>
-                    <div className="space-y-1">
-                        {chats?.map((chat) => (
-                            <div 
-                                key={chat.id}
-                                onClick={() => handleChatClick(chat.id)}
-                                className={cn(
-                                    "flex items-center px-6 py-2 space-x-3 hover:bg-gray-100 cursor-pointer",
-                                    params?.chatId === chat.id && "bg-gray-100"
-                                )}
-                            >
-                                <MessagesSquare className="w-4 h-4" />
-                                <div className="flex flex-col">
-                                    <span className="truncate">
-                                        {chat.title}
-                                    </span>
-                                    <span className="text-sm text-gray-500">
-                                        {formatDateTime(chat.createdAt)}
-                                    </span>
+                        <div className="space-y-1">
+                            {chats?.map((chat) => (
+                                <div 
+                                    key={chat.id}
+                                    onClick={() => handleChatClick(chat.id)}
+                                    className={cn(
+                                        "flex items-center hover:bg-gray-100 cursor-pointer",
+                                        isCollapsed ? "px-2 py-2" : "px-6 py-2 space-x-3",
+                                        params?.chatId === chat.id && "bg-gray-100"
+                                    )}
+                                >
+                                    <MessagesSquare className="w-4 h-4 flex-shrink-0" />
+                                    <div className="flex flex-col min-w-0 flex-1">
+                                        <span className="truncate">
+                                            {chat.title}
+                                        </span>
+                                        <span className="text-sm text-gray-500">
+                                            {formatDateTime(chat.createdAt)}
+                                        </span>
+                                    </div>
                                 </div>
-
-                            </div>
-                        ))}
+                            ))}
+                        </div>
                     </div>
-                </div>
+                )}
+
                 <div>
                     {routes.map((route) => (
-                        <Link href={route.href} key={route.href} className="">
-                            <div className="flex flex-row p-4 items-center border-b space-x-4 hover:bg-black/10">
-                                <div className="ml-2">
+                        <Link href={route.href} key={route.href}>
+                            <div className={cn(
+                                "flex items-center border-b hover:bg-black/10",
+                                isCollapsed ? "p-2 justify-center" : "p-4 space-x-4"
+                            )}>
+                                <div className={isCollapsed ? "" : "ml-2"}>
                                     <route.icon/>
                                 </div>
-                                <div className="font-bold">
-                                    {route.label}
-                                </div>
-                                
+                                {!isCollapsed && (
+                                    <div className="font-bold">
+                                        {route.label}
+                                    </div>
+                                )}
                             </div>
                         </Link>
                     ))}
-
                 </div>
-                <div className="flex  justify-center flex-grow">
-                    <a href="https://github.com/czllll/echochat" className="flex items-center space-x-2 pb-4">
-                        <div className="text-lg font-bold hover:text-cyan-700">
-                            Star this project on 
+
+                {!isCollapsed && (
+                    <>
+                        <div className="flex justify-center flex-grow">
+                            <a href="https://github.com/czllll/echochat" 
+                               className="flex items-center space-x-2 pb-4">
+                                <div className="text-lg font-bold hover:text-cyan-700">
+                                    Star this project on 
+                                </div>
+                                <GithubIcon/>
+                            </a>
                         </div>
-                        <GithubIcon/>
-                    </a>
-                    
-                </div>
-                <div className="absolute bottom-2 left-14 text-gray-500 space-x-4">
-                    <a href="">About</a>
-                    <a href="">Term of Service</a>
-
-                </div>
+                        <div className="absolute bottom-2 left-14 text-gray-500 space-x-4">
+                            <a href="">About</a>
+                            <a href="">Term of Service</a>
+                        </div>
+                    </>
+                )}
             </div>
-
         </div>
-    )
-}
+    );
+};
+
 export default Sidebar;

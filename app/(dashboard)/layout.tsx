@@ -1,16 +1,22 @@
-import Sidebar from "@/components/sidebar";
+"use client";
 
-const DashboardLayout = async({children}: {children: React.ReactNode;}) => {
+import Sidebar from "@/components/sidebar";
+import { useState } from "react";
+
+const DashboardLayout = ({children}: {children: React.ReactNode;}) => {
+    const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(true);
+
     return (
-        <div className="flex h-full">
-            <div className="hidden h-full md:flex md:w-[300px] md:flex-col md:fixed md:inset-y-0 border-r">
-                <Sidebar/>
-            </div>
-            <div className="flex-1 ml-[300px]">
+        <div className="flex min-h-screen h-screen overflow-hidden">
+            <Sidebar 
+                isRightSidebarOpen={isRightSidebarOpen}
+                onRightSidebarToggle={() => setIsRightSidebarOpen(!isRightSidebarOpen)} 
+            />
+            <main className="flex-1 transition-all duration-300 overflow-y-auto">
                 {children}
-            </div>
-            
+            </main>
         </div>
-    )
-}
+    );
+};
+
 export default DashboardLayout;

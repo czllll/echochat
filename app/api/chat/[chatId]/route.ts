@@ -28,3 +28,32 @@ export async function GET(
         return new NextResponse("Internal Error", { status: 500 })
     }
 }
+
+export async function PATCH(
+    req: Request,
+    { params }: { params: { chatId: string } }
+) {
+    try {
+        const body = await req.json()
+        const { title } = body
+
+
+        if (!params.chatId) {
+            return new NextResponse("Chat ID is required", { status: 400 })
+        }
+
+        const chat = await prismadb.chat.update({
+            where: {
+                id: params.chatId,
+            },
+            data: {
+                title
+            }
+        })
+
+        return NextResponse.json(chat)
+    } catch (error) {
+        console.error('[CHAT_PATCH]', error)
+        return new NextResponse("Internal Error", { status: 500 })
+    }
+}

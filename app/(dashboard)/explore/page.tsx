@@ -25,10 +25,11 @@ const AllChatPage = () => {
     const createChat = async() => {
         try {
             const response = await axios.post('/api/chat', {
-                chatTitle: "title11"
+                chatTitle: "New chat"
             })
             const chatId = response.data.id;
             router.push(`/chat/${chatId}`);
+            
           } catch (error) {
             console.log('[CREATE_CHAT_ERROR]', error)
           }

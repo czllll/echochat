@@ -31,11 +31,11 @@ const AllChatPage = async () => {
     });
 
     return (
-        <div className="max-w-7xl mx-auto">
-            <div className='fixed top-0 left-[300px] right-0'>
+        <div className="w-full mx-auto ">
+            <div className='sticky top-0 right-0'>
                 <Heading title="All Chats"/>
             </div>
-            <div className="space-y-10 px-40 pt-[80px]">
+            <div className="space-y-10 px-40">
                 {chats.map((chat) => (
                     <Link href={`/chat/${chat.id}`} key={chat.id}>
                         <div className="p-4 rounded-md border hover:bg-gray-50 my-6">
