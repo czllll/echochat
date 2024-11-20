@@ -86,7 +86,7 @@ export default function ChatClient({ initialChat }: { initialChat: Chat }) {
                     for (const line of lines) {
                         if (!line.trim() || !line.startsWith('data: ')) continue
                         
-                        const data = line.slice(6) // Remove 'data: '
+                        const data = line.slice(6)
                         
                         if (data === '[DONE]') continue
     
@@ -115,7 +115,7 @@ export default function ChatClient({ initialChat }: { initialChat: Chat }) {
             try {
                 await axios.post('/api/messages', {
                     chatId: initialChat.id,
-                    messages: [...messages, userMessage, aiMessage],
+                    messages: [userMessage, aiMessage],
                 })
             } catch (error) {
                 console.error('[SAVE_MESSAGES_ERROR]', error)
@@ -144,14 +144,14 @@ export default function ChatClient({ initialChat }: { initialChat: Chat }) {
                 code({inline = false, className, children, ...props} :  React.HTMLAttributes<HTMLElement> & { inline?: boolean }) {
                     if (inline) {
                         return (
-                            <code className="text-sm px-1 py-0.5 rounded-md bg-gray-800 text-gray-200" {...props}>
+                            <code className="text-sm px-1 py-0.5 rounded-md bg-gray-800 text-gray-200 max-w-3xl" {...props}>
                                 {children}
                             </code>
                         )
                     }
                     const match = /language-(\w+)/.exec(className || '')
                     return (
-                        <div className="relative">
+                        <div className="relative max-w-5xl overflow-auto">
                             {match && (
                                 <div className="absolute right-2 top-2 text-xs text-gray-400">
                                     {match[1]}
@@ -160,6 +160,8 @@ export default function ChatClient({ initialChat }: { initialChat: Chat }) {
                             <code className={className} {...props}>
                                 {children}
                             </code>
+                            
+
                         </div>
                     )
                 }
@@ -219,10 +221,10 @@ export default function ChatClient({ initialChat }: { initialChat: Chat }) {
 
                                         {isLoading && !streamingContent && (
                                             <div className="flex items-center justify-start space-x-2">
-                                                <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce" />
-                                                <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce" 
+                                                <div className="w-2 h-2 rounded-full bg-gray-800 animate-bounce" />
+                                                <div className="w-2 h-2 rounded-full bg-gray-800 animate-bounce" 
                                                     style={{ animationDelay: '0.2s' }} />
-                                                <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce" 
+                                                <div className="w-2 h-2 rounded-full bg-gray-800 animate-bounce" 
                                                     style={{ animationDelay: '0.4s' }} />
                                             </div>
                                         )}

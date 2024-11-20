@@ -1,13 +1,24 @@
+"use client"
 import Link from "next/link";
 import Image from "next/image";
 import { Montserrat } from "next/font/google";
 import { Button } from "@/components/ui/button";
-import { Bolt, Bot, BotMessageSquare, CalendarCheck, ChevronRight, Menu, MessagesSquare, Pickaxe, Plus, Search, Send, UserRoundPen } from "lucide-react";
+import { Bolt, Bot, BotMessageSquare, CalendarCheck, ChevronRight, Menu, MessagesSquare, Plus, Search, UserRoundPen } from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
+import type { Chat } from "@prisma/client";
+import useSWR from 'swr';
+import { format } from 'date-fns';
+
+import axios from "axios";
+import { cn } from "@/lib/utils";
 
 const montserrat = Montserrat({
     weight: "600",
     subsets: ["latin"]
 });
+
+const fetcher = (url: string) => axios.get(url).then(res => res.data);
+
 
 const GithubIcon = () => (
     <svg
@@ -39,12 +50,12 @@ const routes = [
         href: "/subscribe",
         
     },
-    {
-        label: "Creators",
-        icon: Pickaxe,
-        href: "/creators",
+    // {
+    //     label: "Creators",
+    //     icon: Pickaxe,
+    //     href: "/creators",
         
-    },
+    // },
     {
         label: "Profile",
         icon: UserRoundPen,
@@ -57,15 +68,36 @@ const routes = [
         href: "/settings",
         
     },
-    {
-        label: "Send feedback",
-        icon: Send,
-        href: "/send-feedback",
+    // {
+    //     label: "Send feedback",
+    //     icon: Send,
+    //     href: "/send-feedback",
         
-    },
+    // },
 ]
 
 const Sidebar = () => {
+
+
+    const params = useParams();
+    const router = useRouter();
+    
+    const { data: chats } = useSWR<Chat[]>('/api/chat', fetcher, {
+        revalidateOnFocus: false,
+        revalidateOnReconnect: false,
+        dedupingInterval: 10000,
+    });
+
+    const handleChatClick = (chatId: string) => {
+        if (params?.chatId === chatId) return;
+        router.push(`/chat/${chatId}`);
+    };
+
+    const formatDateTime = (date: Date | string) => {
+        const d = new Date(date);
+        return format(d, 'yyyy-MM-dd HH:mm:ss');
+    };
+
     return (
         <div>
             <div className="flex flex-col h-full min-h-screen">
@@ -124,7 +156,34 @@ const Sidebar = () => {
                         </div>
                     </Button>
                 </div>
+                <div className="flex flex-col py-2 border-b">
+                    <div className="px-4 py-2 text-sm font-semibold text-gray-500">
+                        Recent Chats
+                    </div>
+                    <div className="space-y-1">
+                        {chats?.map((chat) => (
+                            <div 
+                                key={chat.id}
+                                onClick={() => handleChatClick(chat.id)}
+                                className={cn(
+                                    "flex items-center px-6 py-2 space-x-3 hover:bg-gray-100 cursor-pointer",
+                                    params?.chatId === chat.id && "bg-gray-100"
+                                )}
+                            >
+                                <MessagesSquare className="w-4 h-4" />
+                                <div className="flex flex-col">
+                                    <span className="truncate">
+                                        {chat.title}
+                                    </span>
+                                    <span className="text-sm text-gray-500">
+                                        {formatDateTime(chat.createdAt)}
+                                    </span>
+                                </div>
 
+                            </div>
+                        ))}
+                    </div>
+                </div>
                 <div>
                     {routes.map((route) => (
                         <Link href={route.href} key={route.href} className="">

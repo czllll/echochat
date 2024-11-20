@@ -1,5 +1,9 @@
 import { createChat } from "@/app/_actions/chat";
+import { authConfig } from "@/lib/auth";
+import prismadb from "@/lib/prismadb";
+import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
+
 
 export async function POST(req: Request) {
     try {
@@ -23,3 +27,42 @@ export async function POST(req: Request) {
         return new NextResponse("Internal error", { status: 500 });
     }
 }
+
+export async function GET() {
+    try {
+      const session = await getServerSession(authConfig)
+      if (!session?.user?.email) {
+        return new NextResponse("Unauthorized", { status: 401 })
+      }
+  
+      const chats = await prismadb.chat.findMany({
+        where: {
+          user: {
+            email: session.user.email
+          }
+        },
+        take: 4,
+        orderBy: {
+          createdAt: 'desc'  
+        },
+        select: {
+          id: true,
+          title: true,
+          createdAt: true,
+          // 可以获取最后一条消息用于预览
+          messages: {
+            take: 1,
+            orderBy: {
+              createdAt: 'desc'
+            }
+          }
+        }
+      })
+  
+      return NextResponse.json(chats)
+  
+    } catch (error) {
+      console.log('[CHATS_GET]', error)
+      return new NextResponse("Internal error", { status: 500 })
+    }
+  }
