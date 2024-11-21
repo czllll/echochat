@@ -32,6 +32,7 @@ model User {
   oauthId        String?  @unique 
   createdAt      DateTime @default(now())
   chats         Chat[]    
+  bots           Bot[]
 }
 
 model Chat {
@@ -42,9 +43,13 @@ model Chat {
   
   userId    Int       
   user      User      @relation(fields: [userId], references: [id])
+  botId     String    
+  bot       Bot       @relation(fields: [botId], references: [id])
   messages  Message[] 
 
   @@index([userId])
+  @@index([botId])
+
 }
 
 model Message {
@@ -57,4 +62,39 @@ model Message {
   chat      Chat     @relation(fields: [chatId], references: [id], onDelete: Cascade)
 
   @@index([chatId])
+}
+
+
+
+model Bot {
+  id        String   @id @default(uuid())
+  name      String   
+  model     String   
+  apiKey    String   
+  endpoint  String   
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  userId    Int      
+  user      User     @relation(fields: [userId], references: [id])
+
+  templateId String
+  template   ModelTemplate @relation(fields: [templateId], references: [id])
+
+  chats     Chat[]   
+
+  @@index([userId])
+}
+
+model ModelTemplate {
+  id          String   @id @default(uuid())
+  name        String   
+  modelId     String   
+  avatar      String   
+  description String   @db.Text
+  baseEndpoint String  
+  isEnabled   Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  bots        Bot[]
 }

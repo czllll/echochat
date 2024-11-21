@@ -1,124 +1,124 @@
-import axios from "axios";
 import { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import GithubProvider from "next-auth/providers/github";
 import CredentialsProvider from "next-auth/providers/credentials";
-
-
+import prismadb from "./prismadb";
 
 export const authConfig: NextAuthOptions = {
-  
     providers: [
         GoogleProvider({
-          clientId: process.env.GOOGLE_CLIENT_ID!,
-          clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+            clientId: process.env.GOOGLE_CLIENT_ID!,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
         }),
         GithubProvider({
-          clientId: process.env.GITHUB_CLIENT_ID!,
-          clientSecret: process.env.GITHUB_CLIENT_SECRET!,
+            clientId: process.env.GITHUB_CLIENT_ID!,
+            clientSecret: process.env.GITHUB_CLIENT_SECRET!,
         }),
         CredentialsProvider({
-          name: "credentials",
-          credentials: {
-            email: {},
-            code: {}
-          },
-          async authorize(credentials) {
-            const email = credentials?.email || "";
-            console.log("credentials",credentials);
-            return {
-              id: email,
-              email: email,
-              name: email,
-              oauthProvider: "credentials",
+            name: "credentials",
+            credentials: {
+                email: {},
+                code: {}
+            },
+            async authorize(credentials) {
+                if (!credentials?.email) {
+                    throw new Error("Email is required");
+                }
+
+                return {
+                    id: credentials.email,
+                    email: credentials.email,
+                    name: credentials.email,
+                    provider: "credentials",
+                };
             }
-          }
         })
-      ],
+    ],
 
-      pages: {
+    pages: {
         signIn: '/sign-in'    
-      },
+    },
+    
     secret: process.env.NEXTAUTH_SECRET,
+    
     session: {
-      strategy: "jwt", 
+        strategy: "jwt", 
     },
+    
     callbacks: {
-      async signIn({ user, account }) {
-        if (!user?.email) {
-          console.error("No email provided");
-          return false;
-        }
-    
-        // 检查用户是否存在
-        const existingUser = await checkUserExists(user.email);
-        if (existingUser) {
-          return true;
-        }
-    
-        // 用户不存在，创建新用户
-        return await createNewUser({
-          email: user.email,
-          name: user.name || user.email || "",
-          provider: account?.provider || "",
-          providerId: account?.providerAccountId || "",
-        });
-      },
-    
-      async session({ session }) {
-        return session;
-      },
-    
-      async jwt({ token }) {
+        async signIn({ user, account }) {
+            try {
+                if (!user?.email) {
+                    console.error("No email provided");
+                    return false;
+                }
 
-        return token;
-      },
+                // 使用 upsert 创建或更新用户
+                const dbUser = await prismadb.user.upsert({
+                    where: { 
+                        email: user.email 
+                    },
+                    create: {
+                        email: user.email,
+                        name: user.name || user.email,
+                        oauthProvider: account?.provider || "credentials",
+                        oauthId: account?.providerAccountId || "",
+                    },
+                    update: {
+                        email: user.email,
+                        name: user.name || user.email,
+                        oauthProvider: account?.provider || "credentials",
+                        oauthId: account?.providerAccountId || "",
+                    }
+                });
+
+                return true; // 必须返回 true 以继续登录流程
+            } catch (error) {
+                console.error("Error in signIn callback:", error);
+                return false;
+            }
+        },
+
+        async session({ session, token }) {
+            try {
+                if (session?.user?.email) {
+                    // 获取完整的用户信息
+                    const dbUser = await prismadb.user.findUnique({
+                        where: { 
+                            email: session.user.email 
+                        },
+                        select: {
+                            id: true,
+                            email: true,
+                            name: true,
+
+                        }
+                    });
+
+                    return {
+                        ...session,
+                        user: {
+                            ...session.user,
+                            ...dbUser
+                        }
+                    };
+                }
+                return session;
+            } catch (error) {
+                console.error("Error in session callback:", error);
+                return session;
+            }
+        },
+
+        async jwt({ token, user, account }) {
+            if (user) {
+                // 可以在token中添加额外信息
+                token.provider = account?.provider;
+                // 其他需要存储在token中的信息
+            }
+            return token;
+        }
     },
-    
 
     debug: process.env.NODE_ENV === 'development',
-    // jwt: {
-    //   encode: async function (params) {
-    //     console.log("params", params)
-    //     return "1";
-    //   }
-    // }
-}
-
-
-
-    // 辅助函数
-    async function checkUserExists(email: string) {
-      try {
-        const response = await axios.get(`${process.env.NEXTAUTH_URL}/api/users`, {
-          params: { emailAddress: email },
-        });
-        return response.status === 200;
-      } catch (error) {
-        if (axios.isAxiosError(error) && error.response?.status === 404) {
-          return false;
-        }
-        throw error; 
-      }
-    }
-    interface CreateUserParams {
-      email: string;
-      name: string;
-      provider: string;
-      providerId: string;
-    }
-    
-    async function createNewUser({ email, name, provider, providerId }: CreateUserParams) {
-      try {
-        const response = await axios.post(`${process.env.NEXTAUTH_URL}/api/users`, {
-          emailAddress: email,
-          name: name,
-          oauthProvider: provider,
-          oauthId: providerId,
-        });
-        return response.status === 200;
-      } catch (error) {
-        console.error("Failed to create user:", error);
-        return false;
-      }
-    }
+};

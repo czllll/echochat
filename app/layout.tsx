@@ -17,6 +17,9 @@ const geistMono = localFont({
 export const metadata: Metadata = {
   title: "EchoChat",
   description: "Create your own chat bot",
+  icons: {
+    icon: '/logo.png', 
+  }
 };
 
 export default function RootLayout({

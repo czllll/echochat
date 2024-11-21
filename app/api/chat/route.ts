@@ -8,13 +8,12 @@ import { NextResponse } from "next/server";
 export async function POST(req: Request) {
     try {
         const body = await req.json();
-        const { chatTitle } = body;
-
-        if (!chatTitle?.trim()) {
+        const { chatTitle, botId } = body;
+        if (!chatTitle?.trim() || !botId) {
             return new NextResponse("Chat title is required", { status: 400 });
         }
 
-        const chat = await createChat(chatTitle);
+        const chat = await createChat(chatTitle, botId);
         
         if (!chat) {
             return new NextResponse("Failed to create chat", { status: 401 });

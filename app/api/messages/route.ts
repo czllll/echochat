@@ -41,7 +41,6 @@ export async function POST(req: Request) {
       if (!savedMessages) {
         return new NextResponse("Failed to save messages", { status: 500 })
       }
-      console.log("===============================================保存信息")
       return NextResponse.json({ success: true })
 
     } catch (error) {

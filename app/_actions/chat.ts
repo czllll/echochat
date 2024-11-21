@@ -40,7 +40,7 @@ export async function getChatById(chatId: string) {
     }
   }
 
-export async function createChat(chatTitle: string) {
+export async function createChat(chatTitle: string, botId: string) {
     try {
         const session = await getServerSession(authConfig);
         if (!session?.user?.email) return null;
@@ -48,17 +48,29 @@ export async function createChat(chatTitle: string) {
         const user = await prismadb.user.findUnique({
             where: {
                 email: session.user.email
+                
             }
         });
         if (!user) return null;
 
+        const defaultBot = await prismadb.bot.findFirst();
+
         return await prismadb.chat.create({
-            data: {
-                id: uuidv4(),
-                userId: user.id,
-                title: chatTitle
-            }
-        });
+          data: {
+              id: uuidv4(),
+              title: chatTitle,
+              user: {
+                  connect: {
+                      id: user.id
+                  }
+              },
+              bot: {
+                  connect: {
+                      id: botId
+                  }
+              }
+          }
+      });
     } catch (error) {
         console.log("[CREATE_CHAT_ACTION]", error);
         return null;

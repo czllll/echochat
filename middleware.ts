@@ -36,6 +36,6 @@ export const config = {
          * /images/* (静态资源)
          * /favicon.ico, /sitemap.xml (静态文件)
          */
-        "/((?!api/auth|_next|images|favicon.ico|sitemap.xml).*)"
+        "/((?!api/customAuth|api/auth|api/users|_next|images|favicon.ico|sitemap.xml).*)"
     ]
 };
