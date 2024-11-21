@@ -12,8 +12,9 @@ import {
 } from "@/components/ui/dialog";
 import { Plus, Edit, Trash } from "lucide-react";
 import axios from "axios";
-
+import type { ModelTemplate } from "@prisma/client"
 export default function ModelManagementPage() {
+
   const [models, setModels] = useState([]);
   const [formData, setFormData] = useState({
     name: '',
@@ -118,7 +119,7 @@ export default function ModelManagementPage() {
       </div>
 
       <div className="grid gap-4">
-        {models.map((model) => (
+        {models.map((model : ModelTemplate) => (
           <div key={model.id} className="border p-4 rounded-lg flex justify-between items-center">
             <div>
               <h3 className="font-semibold">{model.name}</h3>
