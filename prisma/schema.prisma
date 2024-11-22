@@ -91,6 +91,7 @@ model ModelTemplate {
   id          String   @id @default(uuid())
   name        String   
   modelId     String   
+  provider    String
   avatar      String   
   description String   @db.Text
   baseEndpoint String  
