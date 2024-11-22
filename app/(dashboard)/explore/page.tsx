@@ -12,6 +12,7 @@ import type { ModelTemplate } from "@prisma/client";
 import { Label } from "@/components/ui/label";
 import { toast } from "react-hot-toast";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Encryption } from "@/lib/utils";
 
 const AllChatPage = () => {
     const router = useRouter();
@@ -42,7 +43,6 @@ const AllChatPage = () => {
                 toast.error("Please fill in all fields");
                 return;
             }
-
             const botResponse = await axios.post('/api/bots', {
                 name: botName,
                 model: modelName,

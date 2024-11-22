@@ -2,6 +2,8 @@ import prismadb from '@/lib/prismadb';
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authConfig } from "@/lib/auth";
+import { Encryption } from '@/lib/utils';
+
 
 export async function POST(req: Request) {
     try {
@@ -17,7 +19,6 @@ export async function POST(req: Request) {
             return new NextResponse("Missing required fields", { status: 400 });
         }
 
-        // 首先查找用户
         const user = await prismadb.user.findFirst({
             where: {
                 email: session.user?.email
@@ -38,23 +39,16 @@ export async function POST(req: Request) {
         if (!template) {
             return new NextResponse("Invalid template", { status: 400 });
         }
-
+        const {encrypted, iv} =  Encryption.encrypt(apiKey);
         const bot = await prismadb.bot.create({
             data: {
                 model,
                 endpoint,
-                apiKey,
+                encryptedApiKey: encrypted,
+                apiKeyIv: iv,
                 name,
-                user: {
-                    connect: {
-                        id: user.id
-                    }
-                },
-                template: {
-                    connect: {
-                        id: templateId
-                    }
-                }
+                userId: user.userId,
+                templateId
             }
         });
 

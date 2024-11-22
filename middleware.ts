@@ -9,12 +9,12 @@ export async function middleware(request: NextRequest) {
 
     // 处理根路径
     if (pathname === "/") {
-        return NextResponse.redirect(new URL("/dashboard", request.url));
+        return NextResponse.redirect(new URL("/explore", request.url));
     }
 
     // 已登录用户访问登录页面时重定向到dashboard
     if (token && pathname === "/sign-in") {
-        return NextResponse.redirect(new URL("/dashboard", request.url));
+        return NextResponse.redirect(new URL("/explore", request.url));
     }
 
     // 未登录用户访问需要认证的路径时重定向到登录页

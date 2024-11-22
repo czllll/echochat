@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import prismadb from "@/lib/prismadb";
 import OpenAI from "openai";
+import { Encryption } from "@/lib/utils";
 
 
 export async function POST(req: Request) {
@@ -16,9 +17,9 @@ export async function POST(req: Request) {
           if (!bot) {
             return new NextResponse("Bot not found", {status : 404 })
           }
-  
+          
           const openai = new OpenAI({
-              apiKey: bot.apiKey,
+              apiKey: Encryption.decrypt(bot.encryptedApiKey, bot.apiKeyIv),
               baseURL: bot.endpoint || 'https://api.openai.com/v1'
             })
 

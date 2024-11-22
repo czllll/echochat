@@ -67,21 +67,22 @@ model Message {
 
 
 model Bot {
-  id        String   @id @default(uuid())
-  name      String   
-  model     String   
-  apiKey    String   
-  endpoint  String   
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id              String   @id @default(uuid())
+  name            String   
+  model           String   
+  encryptedApiKey String   
+  apiKeyIv        String   
+  endpoint        String   
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
   
-  userId    Int      
-  user      User     @relation(fields: [userId], references: [id])
+  userId          String      
+  user            User     @relation(fields: [userId], references: [userId])
 
-  templateId String
-  template   ModelTemplate @relation(fields: [templateId], references: [id])
+  templateId      String
+  template        ModelTemplate @relation(fields: [templateId], references: [id])
 
-  chats     Chat[]   
+  chats           Chat[]   
 
   @@index([userId])
 }
