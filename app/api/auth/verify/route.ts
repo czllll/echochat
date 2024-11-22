@@ -18,6 +18,7 @@ export async function GET(request: Request) {
   
       return new Response('OK')
     } catch (error) {
-      return new Response('Internal Error', { status: 500 })
+      console.error('An error occurred:', error);
+      return new Response('Internal Error', { status: 500 });
     }
   }

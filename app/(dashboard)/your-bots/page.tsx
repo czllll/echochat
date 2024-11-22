@@ -8,8 +8,6 @@ import { Plus, MessageSquare, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { redirect } from "next/navigation";
-import axios from "axios";
-import toast from "react-hot-toast";
 import { createChatAction } from "./action";
 
 const BotsPage = async () => {

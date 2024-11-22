@@ -126,7 +126,7 @@ export default function ChatClient({ initialChat }: { initialChat: Chat }) {
                 }
             }
 
-            const response = await fetch('/api/openai', {
+            const response = await fetch('/api/adapter', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -136,7 +136,6 @@ export default function ChatClient({ initialChat }: { initialChat: Chat }) {
                     botId: initialChat.botId
                 }),
             })
-            console.log("resp[][][][][][][][][][]ond",response)
     
             if (!response.ok) {
                 throw new Error('Response error')

@@ -12,7 +12,6 @@ import type { ModelTemplate } from "@prisma/client";
 import { Label } from "@/components/ui/label";
 import { toast } from "react-hot-toast";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Encryption } from "@/lib/utils";
 
 const AllChatPage = () => {
     const router = useRouter();
@@ -21,6 +20,8 @@ const AllChatPage = () => {
     const [endpoint, setEndpoint] = useState("");
     const [apiKey, setApiKey] = useState("");
     const [botName, setBotName] = useState("");
+    const [selectedModel, setSelectedModel] = useState<ModelTemplate | null>(null);
+
 
     useEffect(() => {
         const fetchModels = async () => {
@@ -39,15 +40,18 @@ const AllChatPage = () => {
 
     const createBot = async(templateId: string, modelName: string) => {
         try {
-            if (!endpoint || !apiKey || !botName) {
+            if (!apiKey || !botName) {
                 toast.error("Please fill in all fields");
                 return;
             }
+
+            const finalEndpoint = endpoint.trim() || selectedModel?.baseEndpoint || "";
+
             const botResponse = await axios.post('/api/bots', {
                 name: botName,
                 model: modelName,
                 apiKey,
-                endpoint,
+                endpoint : finalEndpoint,
                 templateId
             });
             
@@ -91,7 +95,15 @@ const AllChatPage = () => {
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {models.map((model) => (
-                                <Dialog key={model.id}>
+                                <Dialog key={model.id}
+                                    onOpenChange={(open) => {
+                                        if (open) {
+                                            setSelectedModel(model);
+                                            setEndpoint(""); 
+                                            setBotName("");
+                                            setApiKey("");
+                                        }
+                                }}>
                                     <DialogTrigger asChild>
                                         <Card className="cursor-pointer hover:shadow-md transition duration-300">
                                             <CardHeader className="p-4">
@@ -142,10 +154,16 @@ const AllChatPage = () => {
                                                 />
                                             </div>
                                             <div className="space-y-2">
-                                                <Label htmlFor="endpoint">Endpoint URL</Label>
+                                            <Label htmlFor="endpoint">
+                                                Endpoint URL 
+                                                <span className="text-sm text-muted-foreground ml-2">
+                                                    (Optional - Default: {selectedModel?.baseEndpoint})
+                                                </span>
+                                            </Label>
+
                                                 <Input
                                                     id="endpoint"
-                                                    placeholder="Enter your endpoint URL"
+                                                    placeholder={selectedModel?.baseEndpoint || "Enter custom endpoint URL"}
                                                     value={endpoint}
                                                     onChange={(e) => setEndpoint(e.target.value)}
                                                 />

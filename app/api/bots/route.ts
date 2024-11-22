@@ -79,7 +79,7 @@ export async function GET() {
 
         const bots = await prismadb.bot.findMany({
             where: {
-                userId: user.id
+                userId: user.userId
             },
             include: {
                 template: true

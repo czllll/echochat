@@ -11,6 +11,7 @@ export async function DELETE(
     });
     return new NextResponse(null, { status: 204 });
   } catch (error) {
+    console.error('An error occurred:', error);
     return new NextResponse('Internal Error', { status: 500 });
   }
 }

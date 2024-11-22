@@ -47,43 +47,24 @@ export const authConfig: NextAuthOptions = {
     },
     
     callbacks: {
-        async signIn({ user, account }) {
+        async signIn({ user }) {
             try {
                 if (!user?.email) {
                     console.error("No email provided");
                     return false;
                 }
 
-                // 使用 upsert 创建或更新用户
-                const dbUser = await prismadb.user.upsert({
-                    where: { 
-                        email: user.email 
-                    },
-                    create: {
-                        email: user.email,
-                        name: user.name || user.email,
-                        oauthProvider: account?.provider || "credentials",
-                        oauthId: account?.providerAccountId || "",
-                    },
-                    update: {
-                        email: user.email,
-                        name: user.name || user.email,
-                        oauthProvider: account?.provider || "credentials",
-                        oauthId: account?.providerAccountId || "",
-                    }
-                });
 
-                return true; // 必须返回 true 以继续登录流程
+                return true; 
             } catch (error) {
                 console.error("Error in signIn callback:", error);
                 return false;
             }
         },
 
-        async session({ session, token }) {
+        async session({ session }) {
             try {
                 if (session?.user?.email) {
-                    // 获取完整的用户信息
                     const dbUser = await prismadb.user.findUnique({
                         where: { 
                             email: session.user.email 

@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import {
   Dialog,
   DialogContent,
@@ -10,19 +11,22 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Plus, Edit, Trash } from "lucide-react";
+import { Plus, Edit, Trash, Upload } from "lucide-react";
 import axios from "axios";
 import type { ModelTemplate } from "@prisma/client"
-export default function ModelManagementPage() {
 
+export default function ModelManagementPage() {
   const [models, setModels] = useState([]);
   const [formData, setFormData] = useState({
     name: '',
-    modelId: '',
+    provider: '',
     avatar: '',
     description: '',
     baseEndpoint: 'https://api.openai.com/v1',
+    isEnabled: true
   });
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState('');
 
   useEffect(() => {
     fetchModels();
@@ -37,18 +41,51 @@ export default function ModelManagementPage() {
     }
   };
 
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setAvatarFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAvatarPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await axios.post('/api/model-templates', formData);
+      // 首先上传头像（如果有）
+      let avatarPath = '';
+      if (avatarFile) {
+        const formData = new FormData();
+        formData.append('file', avatarFile);
+        const uploadRes = await axios.post('/api/upload', formData);
+        avatarPath = uploadRes.data.path;
+      }
+
+      // 创建模型
+      const modelData = {
+        ...formData,
+        modelId: `${formData.provider.toLowerCase()}-${formData.name.toLowerCase().replace(/\s+/g, '-')}`,
+        avatar: avatarPath || formData.avatar,
+      };
+
+      await axios.post('/api/model-templates', modelData);
       fetchModels();
+      
+      // 重置表单
       setFormData({
         name: '',
-        modelId: '',
+        provider: '',
         avatar: '',
         description: '',
         baseEndpoint: 'https://api.openai.com/v1',
+        isEnabled: true
       });
+      setAvatarFile(null);
+      setAvatarPreview('');
     } catch (error) {
       console.error('Failed to create model:', error);
     }
@@ -81,20 +118,40 @@ export default function ModelManagementPage() {
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium mb-1">Name</label>
+                <label className="block text-sm font-medium mb-1">Provider</label>
                 <Input
-                  value={formData.name}
-                  onChange={(e) => setFormData({...formData, name: e.target.value})}
+                  value={formData.provider}
+                  onChange={(e) => setFormData({...formData, provider: e.target.value})}
+                  placeholder="e.g. OpenAI, Anthropic"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Model ID</label>
+                <label className="block text-sm font-medium mb-1">Model Name</label>
                 <Input
-                  value={formData.modelId}
-                  onChange={(e) => setFormData({...formData, modelId: e.target.value})}
+                  value={formData.name}
+                  onChange={(e) => setFormData({...formData, name: e.target.value})}
+                  placeholder="e.g. GPT-4, Claude"
                   required
                 />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Avatar</label>
+                <div className="flex items-center space-x-4">
+                  {avatarPreview && (
+                    <img src={avatarPreview} alt="Preview" className="w-12 h-12 rounded-full object-cover" />
+                  )}
+                  <label className="flex items-center px-4 py-2 bg-secondary rounded-md cursor-pointer">
+                    <Upload className="mr-2 h-4 w-4" />
+                    <span>Upload Image</span>
+                    <input
+                      type="file"
+                      className="hidden"
+                      accept="image/*"
+                      onChange={handleAvatarChange}
+                    />
+                  </label>
+                </div>
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1">Description</label>
@@ -112,6 +169,13 @@ export default function ModelManagementPage() {
                   required
                 />
               </div>
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium">Enabled</label>
+                <Switch
+                  checked={formData.isEnabled}
+                  onCheckedChange={(checked) => setFormData({...formData, isEnabled: checked})}
+                />
+              </div>
               <Button type="submit" className="w-full">Create Model</Button>
             </form>
           </DialogContent>
@@ -119,24 +183,44 @@ export default function ModelManagementPage() {
       </div>
 
       <div className="grid gap-4">
-        {models.map((model : ModelTemplate) => (
+        {models.map((model: ModelTemplate) => (
           <div key={model.id} className="border p-4 rounded-lg flex justify-between items-center">
-            <div>
-              <h3 className="font-semibold">{model.name}</h3>
-              <p className="text-sm text-gray-500">{model.modelId}</p>
-              <p className="text-sm">{model.description}</p>
+            <div className="flex items-center space-x-4">
+              {model.avatar && (
+                <img src={model.avatar} alt={model.name} className="w-12 h-12 rounded-full object-cover" />
+              )}
+              <div>
+                <h3 className="font-semibold">{model.name}</h3>
+                <p className="text-sm text-gray-500">{model.provider}</p>
+                <p className="text-sm">{model.description}</p>
+              </div>
             </div>
-            <div className="flex space-x-2">
-              <Button variant="outline" size="sm">
-                <Edit className="h-4 w-4" />
-              </Button>
-              <Button 
-                variant="destructive" 
-                size="sm"
-                onClick={() => handleDelete(model.id)}
-              >
-                <Trash className="h-4 w-4" />
-              </Button>
+            <div className="flex items-center space-x-4">
+              <Switch
+                checked={model.isEnabled}
+                onCheckedChange={async (checked) => {
+                  try {
+                    await axios.patch(`/api/model-templates/${model.id}`, {
+                      isEnabled: checked
+                    });
+                    fetchModels();
+                  } catch (error) {
+                    console.error('Failed to update model status:', error);
+                  }
+                }}
+              />
+              <div className="flex space-x-2">
+                <Button variant="outline" size="sm">
+                  <Edit className="h-4 w-4" />
+                </Button>
+                <Button 
+                  variant="destructive" 
+                  size="sm"
+                  onClick={() => handleDelete(model.id)}
+                >
+                  <Trash className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           </div>
         ))}

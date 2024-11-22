@@ -53,7 +53,6 @@ export async function createChat(chatTitle: string, botId: string) {
         });
         if (!user) return null;
 
-        const defaultBot = await prismadb.bot.findFirst();
 
         return await prismadb.chat.create({
           data: {

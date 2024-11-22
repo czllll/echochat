@@ -7,7 +7,7 @@ const DashboardPage = () => {
     router.push('/explore');
     return (
         <div>
-            <h1>Dashboard</h1>
+            <h1>Loading...</h1>
         </div>
     )
 }
