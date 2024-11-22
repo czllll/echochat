@@ -7,6 +7,10 @@ import { formatDateTime } from "@/lib/utils";
 import { Plus, MessageSquare, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
+import { redirect } from "next/navigation";
+import axios from "axios";
+import toast from "react-hot-toast";
+import { createChatAction } from "./action";
 
 const BotsPage = async () => {
     const session = await getServerSession(authConfig);
@@ -29,7 +33,7 @@ const BotsPage = async () => {
             createdAt: 'desc'
         }
     });
-
+    
     return (
         <div className="w-full mx-auto">
             <div className='sticky top-0 right-0 mb-8 bg-white z-10'>
@@ -41,7 +45,7 @@ const BotsPage = async () => {
                         </Button>
                     </Link>
                 </div>
-                <Heading title="All Chats"/>
+                <Heading title="Your bots"/>
             </div>
 
             
@@ -89,12 +93,21 @@ const BotsPage = async () => {
                                         Settings
                                     </Button>
                                 </Link>
-                                <Link href={`/bots/${bot.id}/chat`}>
-                                    <Button size="sm">
+                                <form
+                                    action={async () => {
+                                        'use server'
+                                        const chat = await createChatAction(bot.id);
+                                        if (chat) {
+                                            redirect(`/chat/${chat.id}`);
+                                        }
+                                    }}
+                                >
+                                    <Button size="sm" type="submit">
                                         <MessageSquare className="w-4 h-4 mr-2"/>
                                         Chat
                                     </Button>
-                                </Link>
+                                </form>
+
                             </CardFooter>
                         </Card>
                     ))}
