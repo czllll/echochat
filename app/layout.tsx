@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   title: "EchoChat",
   description: "Create your own chat bot",
   icons: {
-    icon: '/logo.png', 
+    icon: '/icons/logo.png', 
   }
 };
 

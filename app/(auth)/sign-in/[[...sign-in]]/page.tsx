@@ -78,7 +78,7 @@ const Page = () => {
               <Image
                 alt='Background'
                 fill
-                src='/background.png'
+                src='/icons/background.png'
                 className='object-cover'
               />
               <div className='absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-white to-transparent' />
@@ -88,7 +88,7 @@ const Page = () => {
               <div className='w-[80vw] max-w-[400px] pt-8 space-y-4'>
                 <div className='flex flex-row space-x-2 justify-center'>
                   <div className='relative w-8 h-8 '>
-                    <Image alt='Logo' fill src='/logo.png' />
+                    <Image alt='Logo' fill src='/icons/logo.png' />
                   </div>
                   <h1
                     className={`flex text-4xl leading-none items-center justify-center ${titleFont.className}`}
@@ -157,7 +157,7 @@ const Page = () => {
             <div className='w-[80vw] md:max-w-[400px] space-y-2'>
               <div className='flex flex-row space-x-2 justify-start'>
                 <div className='relative w-8 h-8 '>
-                  <Image alt='Logo' fill src='/logo.png' />
+                  <Image alt='Logo' fill src='/icons/logo.png' />
                 </div>
                 <h1
                   className={`flex text-4xl leading-none items-center justify-center ${titleFont.className}`}

@@ -98,7 +98,7 @@ const Sidebar = ({onRightSidebarToggle }: SidebarProps) => {
                     )}>
                         <Link href="/dashboard" className="flex items-center p-3 space-x-2">
                             <div className="relative w-8 h-8">
-                                <Image fill alt="Logo" src="/logo.png"/>
+                                <Image fill alt="Logo" src="/icons/logo.png"/>
                             </div>
                             <h1 className={`text-2xl ${montserrat.className}`}>
                                 EchoChat
