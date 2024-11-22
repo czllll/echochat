@@ -7,7 +7,7 @@ const DashboardLayout = ({children}: {children: React.ReactNode;}) => {
     const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(true);
 
     return (
-        <div className="flex min-h-screen h-screen overflow-hidden">
+        <div className="flex min-h-screen h-screen">
             <Sidebar 
                 isRightSidebarOpen={isRightSidebarOpen}
                 onRightSidebarToggle={() => setIsRightSidebarOpen(!isRightSidebarOpen)} 

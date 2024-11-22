@@ -87,7 +87,7 @@ const Sidebar = ({onRightSidebarToggle }: SidebarProps) => {
 
     return (
         <div className={cn(
-            "transition-all duration-300 ease-in-out border-r max-h-screen",
+            "transition-all duration-300 ease-in-out border-r",
             isCollapsed ? "w-[80px]" : "w-[300px]"
         )}>
             <div className="flex flex-col h-full min-h-screen">

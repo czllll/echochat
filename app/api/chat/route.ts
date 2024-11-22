@@ -42,13 +42,12 @@ export async function GET() {
         },
         take: 4,
         orderBy: {
-          createdAt: 'desc'  
+          updatedAt: 'desc'  
         },
         select: {
           id: true,
           title: true,
           createdAt: true,
-          // 可以获取最后一条消息用于预览
           messages: {
             take: 1,
             orderBy: {

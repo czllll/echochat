@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import Heading from "@/components/heading";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Search } from "lucide-react";
+import { Search, Bot } from "lucide-react";
 import Image from 'next/image';
 import { Button } from "@/components/ui/button";
 import axios from "axios";
@@ -11,8 +11,7 @@ import { useRouter } from "next/navigation";
 import type { ModelTemplate } from "@prisma/client";
 import { Label } from "@/components/ui/label";
 import { toast } from "react-hot-toast";
-import { getServerSession } from "next-auth";
-import { authConfig } from "@/lib/auth";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 
 const AllChatPage = () => {
     const router = useRouter();
@@ -37,17 +36,16 @@ const AllChatPage = () => {
         fetchModels();
     }, []);
 
-    const createBot = async(templateId: string, model: string) => {
+    const createBot = async(templateId: string, modelName: string) => {
         try {
             if (!endpoint || !apiKey || !botName) {
                 toast.error("Please fill in all fields");
                 return;
             }
 
-            // 创建bot
             const botResponse = await axios.post('/api/bots', {
                 name: botName,
-                model,
+                model: modelName,
                 apiKey,
                 endpoint,
                 templateId
@@ -72,8 +70,8 @@ const AllChatPage = () => {
         <div>
             <Heading title="Explore"/>
             <div className="flex flex-col">
-                <div className="px-16 py-8">
-                    <div className="relative">
+                <div className="px-4 md:px-16 py-8">
+                    <div className="relative mb-8">
                         <span className="absolute inset-y-0 left-3 flex items-center text-gray-400">
                             <Search className="w-5 h-5" />
                         </span>
@@ -82,31 +80,41 @@ const AllChatPage = () => {
                             className="pl-10 rounded-full border border-gray-300 h-10"
                         />
                     </div>
-                    <div className="space-y-4 border-b py-4">
-                        {isLoading ? (
-                            <div className="text-center py-4">Loading...</div>
-                        ) : models.length === 0 ? (
-                            <div className="text-center py-4">No models available</div>
-                        ) : (
-                            models.map((model) => (
+
+                    {isLoading ? (
+                        <div className="text-center py-4">Loading...</div>
+                    ) : models.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center h-[60vh]">
+                            <Bot className="h-8 w-8 text-muted-foreground mb-2"/>
+                            <p className="text-muted-foreground">No models available</p>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {models.map((model) => (
                                 <Dialog key={model.id}>
                                     <DialogTrigger asChild>
-                                        <div className="flex flex-row space-x-4 cursor-pointer hover:bg-black/5 p-4 rounded-lg">
-                                            <div className="relative w-20 h-20">
-                                                <Image 
-                                                    fill 
-                                                    src={model.avatar || "/default-model-avatar.png"} 
-                                                    alt={`${model.name} avatar`}
-                                                    className="rounded-lg object-cover"
-                                                />
-                                            </div>
-                                            <div className="flex flex-col space-y-1 w-5/6">
-                                                <div className="font-bold text-lg">{model.name}</div>
-                                                <div className="text-ellipsis whitespace-pre-wrap line-clamp-2">
-                                                    {model.description}
+                                        <Card className="cursor-pointer hover:shadow-md transition duration-300">
+                                            <CardHeader className="p-4">
+                                                <div className="flex items-center space-x-4">
+                                                    <div className="relative w-16 h-16">
+                                                        <Image 
+                                                            fill 
+                                                            src={model.avatar || "/default-model-avatar.png"} 
+                                                            alt={`${model.name} avatar`}
+                                                            className="rounded-lg object-cover"
+                                                        />
+                                                    </div>
+                                                    <div className="flex-1">
+                                                        <h3 className="font-bold text-lg">{model.name}</h3>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        </div>
+                                            </CardHeader>
+                                            <CardContent className="p-4 pt-0">
+                                                <p className="text-sm text-muted-foreground line-clamp-3">
+                                                    {model.description}
+                                                </p>
+                                            </CardContent>
+                                        </Card>
                                     </DialogTrigger>
                                     <DialogContent>
                                         <DialogHeader>
@@ -153,7 +161,7 @@ const AllChatPage = () => {
                                                 />
                                             </div>
                                             <Button 
-                                                onClick={() => createBot(model.id, model.modelId)}
+                                                onClick={() => createBot(model.id, model.name)}
                                                 className="w-full"
                                             >
                                                 Create Bot & Start Chat
@@ -161,9 +169,9 @@ const AllChatPage = () => {
                                         </div>
                                     </DialogContent>
                                 </Dialog>
-                            ))
-                        )}
-                    </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

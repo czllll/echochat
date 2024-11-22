@@ -1,53 +1,55 @@
+import prismadb from '@/lib/prismadb'
+import { NextResponse } from 'next/server'
 import OpenAI from 'openai'
-
-const openai = new OpenAI({
-    // apiKey: process.env.OPEN_API_KEY,
-    apiKey: process.env.NEW_API_KEY,
-    baseURL: 'http://localhost:3000/v1'
-})
 
 export async function POST(req: Request) {
     try {
-        const { messages } = await req.json()
+        const { messages, botId } = await req.json()
+       const bot = await prismadb.bot.findUnique({
+          where: { 
+            id: botId 
+          },
+        })
 
-        const stream = new ReadableStream({
+        if (!bot) {
+          return new NextResponse("Bot not found", {status : 404 })
+        }
+
+        const openai = new OpenAI({
+            apiKey: bot.apiKey,
+            baseURL: bot.endpoint || 'https://api.openai.com/v1'
+          })
+
+
+
+          const stream = await openai.chat.completions.create({
+            model: bot.model,
+            messages,
+            stream: true,
+            temperature: 0.7,
+          })
+      
+          const readable = new ReadableStream({
             async start(controller) {
-                const sendData = (data: string) => {
-                    controller.enqueue(new TextEncoder().encode(`data: ${data}\n\n`))
-                }
-
-                try {
-                    const response = await openai.chat.completions.create({
-                        model: 'gpt-3.5-turbo',
-                        stream: true,
-                        messages: messages,
-                    })
-
-                    for await (const chunk of response) {
-                        const content = chunk.choices[0]?.delta?.content || ''
-                        if (content) {
-                            sendData(JSON.stringify({
-                                choices: [{ delta: { content } }]
-                            }))
-                        }
+                for await (const chunk of stream) {
+                    const data = chunk.choices[0]?.delta?.content || ''
+                    if (data) {
+                        // 发送数据
+                        controller.enqueue(`data: ${JSON.stringify(chunk)}\n\n`)
                     }
-
-                    // 发送结束信号
-                    sendData('[DONE]')
-                    controller.close()
-                } catch (error) {
-                    controller.error(error)
                 }
+                controller.enqueue('data: [DONE]\n\n')
+                controller.close()
             }
         })
 
-        return new Response(stream, {
-            headers: {
-                'Content-Type': 'text/event-stream',
-                'Cache-Control': 'no-cache',
-                'Connection': 'keep-alive',
-            },
-        })
+        return new Response(readable, {
+          headers: {
+              'Content-Type': 'text/event-stream',
+              'Cache-Control': 'no-cache',
+              'Connection': 'keep-alive',
+          },
+      })
 
     } catch (error) {
         console.error('[OPENAI_ERROR]', error)

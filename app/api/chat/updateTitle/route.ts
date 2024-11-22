@@ -2,15 +2,25 @@ import { NextResponse } from "next/server";
 import prismadb from "@/lib/prismadb";
 import OpenAI from "openai";
 
-const openai = new OpenAI({
-    // apiKey: process.env.OPEN_API_KEY,
-    apiKey: process.env.NEW_API_KEY,
-    baseURL: 'http://localhost:3000/v1'
-})
 
 export async function POST(req: Request) {
     try {
-        const { chatId, message } = await req.json();
+        const { chatId, botId, message } = await req.json();
+
+        const bot = await prismadb.bot.findUnique({
+            where: { 
+              id: botId 
+            },
+          })
+  
+          if (!bot) {
+            return new NextResponse("Bot not found", {status : 404 })
+          }
+  
+          const openai = new OpenAI({
+              apiKey: bot.apiKey,
+              baseURL: bot.endpoint || 'https://api.openai.com/v1'
+            })
 
         const completion = await openai.chat.completions.create({
             messages: [
@@ -23,7 +33,7 @@ export async function POST(req: Request) {
                     content: message
                 }
             ],
-            model: "gpt-3.5-turbo",
+            model: bot.model,
         });
 
         const generatedTitle = completion.choices[0].message.content;

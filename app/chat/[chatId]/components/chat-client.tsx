@@ -9,18 +9,12 @@ import 'highlight.js/styles/vs2015.css'
 import { useEffect, useRef, useState } from 'react'
 import { ChatCompletionMessageParam } from 'openai/resources/index.mjs'
 import axios from 'axios'
-import type { Message } from "@prisma/client";
+import type { Message, Chat } from "@prisma/client";
 import { Pen } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useRouter } from 'next/navigation'
 import { mutate } from 'swr'
 
-
-interface Chat {
-    id: string
-    title: string | null
-    messages?: unknown[]
-}
 
 
 
@@ -119,6 +113,7 @@ export default function ChatClient({ initialChat }: { initialChat: Chat }) {
                 try {
                     const titleResponse = await axios.post('/api/chat/updateTitle', {
                         chatId: initialChat.id,
+                        botId: initialChat.botId,
                         message: inputValue
                     });
                     
@@ -137,9 +132,11 @@ export default function ChatClient({ initialChat }: { initialChat: Chat }) {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    messages: [...messages, userMessage]
+                    messages: [...messages, userMessage],
+                    botId: initialChat.botId
                 }),
             })
+            console.log("resp[][][][][][][][][][]ond",response)
     
             if (!response.ok) {
                 throw new Error('Response error')
@@ -160,6 +157,7 @@ export default function ChatClient({ initialChat }: { initialChat: Chat }) {
                     if (done) break
     
                     const text = decoder.decode(value)
+                    console.log("hahahahahaa",text)
                     const lines = text.split('\n')
                     
                     for (const line of lines) {
@@ -256,6 +254,7 @@ export default function ChatClient({ initialChat }: { initialChat: Chat }) {
                 <Sidebar 
                     isRightSidebarOpen={isRightSidebarOpen}
                     onRightSidebarToggle={() => setIsRightSidebarOpen(!isRightSidebarOpen)} 
+                    
                 />
                 <div className='flex-1 transition-all duration-300 w-full'>
                     <div className='flex flex-col'>
@@ -348,7 +347,7 @@ export default function ChatClient({ initialChat }: { initialChat: Chat }) {
                             </div>
                         </div>
 
-                        <div className='sticky bottom-0 left-0 right-0 border-t p-4 bg-white'>
+                        <div className='sticky bottom-0 left-0 right-0 px-4 bg-white'>
                             <div className='flex gap-2 items-center'>
                                 <Input
                                     placeholder={`Send a message...`}
