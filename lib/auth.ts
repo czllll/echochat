@@ -47,13 +47,29 @@ export const authConfig: NextAuthOptions = {
     },
     
     callbacks: {
-        async signIn({ user }) {
+        async signIn({ user, account }) {
             try {
                 if (!user?.email) {
                     console.error("No email provided");
                     return false;
                 }
-
+                await prismadb.user.upsert({
+                    where: { 
+                        email: user.email 
+                    },
+                    create: {
+                        email: user.email,
+                        name: user.name || user.email,
+                        oauthProvider: account?.provider || "credentials",
+                        oauthId: account?.providerAccountId || "",
+                    },
+                    update: {
+                        email: user.email,
+                        name: user.name || user.email,
+                        oauthProvider: account?.provider || "credentials",
+                        oauthId: account?.providerAccountId || "",
+                    }
+                });
 
                 return true; 
             } catch (error) {
